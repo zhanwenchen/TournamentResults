@@ -21,7 +21,7 @@ def testCount():
         raise TypeError(
             "countPlayers should return numeric zero, not string '0'.")
     if c != 0:
-        raise ValueError("After deletion, countPlayers should return zero.")
+        raise ValueError("After deletion, countPlayers should return zero. It is returning %s" % c)
     print "1. countPlayers() returns 0 after initial deletePlayers() execution."
     registerPlayer("Chandra Nalaar")
     c = countPlayers()
@@ -58,7 +58,7 @@ def testStandingsBeforeMatches():
     elif len(standings) > 2:
         raise ValueError("Only registered players should appear in standings.")
     if len(standings[0]) != 4:
-        raise ValueError("Each playerStandings row should have four columns.")
+        raise ValueError("Each playerStandings row should have four columns. It has %s" % len(standings[0]))
     [(id1, name1, wins1, matches1), (id2, name2, wins2, matches2)] = standings
     if matches1 != 0 or matches2 != 0 or wins1 != 0 or wins2 != 0:
         raise ValueError(
@@ -86,7 +86,7 @@ def testReportMatches():
     standings = playerStandings()
     for (i, n, w, m) in standings:
         if m != 1:
-            raise ValueError("Each player should have one match recorded.")
+            raise ValueError("Each player should have one match recorded. It has %s." % m)
         if i in (id1, id3) and w != 1:
             raise ValueError("Each match winner should have one win recorded.")
         elif i in (id2, id4) and w != 0:
@@ -98,7 +98,7 @@ def testReportMatches():
         raise ValueError("Match deletion should not change number of players in standings.")
     for (i, n, w, m) in standings:
         if m != 0:
-            raise ValueError("After deleting matches, players should have zero matches recorded.")
+            raise ValueError("After deleting matches, players should have zero matches recorded. It has %s" % m)
         if w != 0:
             raise ValueError("After deleting matches, players should have zero wins recorded.")
     print "8. After match deletion, player standings are properly reset.\n9. Matches are properly deleted."

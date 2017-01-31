@@ -20,7 +20,6 @@ def deleteMatches():
     connection.commit()
     connection.close()
 
-
 # Remove all the player records from the database.
 def deletePlayers():
     DELETE_PLAYERS_QUERY = "DELETE FROM players"
@@ -28,6 +27,7 @@ def deletePlayers():
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(DELETE_PLAYERS_QUERY)
+
     connection.commit()
     connection.close()
 
@@ -35,10 +35,12 @@ def deletePlayers():
 # Example
 def countPlayers():
     COUNT_PLAYERS_QUERY = "SELECT count(*) FROM players"
+
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(COUNT_PLAYERS_QUERY)
-    count = connection.fechall()
+
+    count = cursor.fetchall()[0][0]
     connection.close()
     return count
 
@@ -53,12 +55,43 @@ def countPlayers():
 # """
 def registerPlayer(name):
 
-    REGISTER_PLAYERS_QUERY = "INSERT INTO players (%s)"
+    REGISTER_PLAYERS_QUERY = """INSERT INTO players (name) VALUES (%s);"""
+
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(REGISTER_PLAYERS_QUERY, (name,))
+
     connection.commit()
     connection.close()
+
+# def updateScores():
+#     UPDATE_SCORES_QUERY = """
+#         UPDATE players
+#             SET wins =
+#                 (SELECT count(*)
+#                     FROM matches
+#                     WHERE winner = %s
+#                     LIMIT 1
+#                 )
+#             WHERE id = %s;
+#
+#         UPDATE players
+#             SET loses =
+#                 (SELECT count(*)
+#                     FROM matches
+#                     WHERE loser = %s
+#                     LIMIT 1
+#                 )
+#             WHERE id = %s;
+#     """
+#     connection = connect()
+#     cursor = connection.cursor()
+#
+#     cursor.execute(UPDATE_WINNER_QUERY, (winner, winner,))
+#     cursor.execute(UPDATE_LOSER_QUERY, (loser, loser,))
+#
+#     connection.commit()
+#     connection.close()
 
 
 def playerStandings():
@@ -74,15 +107,20 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    QUERY = "SELECT name, wins FROM players ORDER By DESC"
+    QUERY = """
+        SELECT id, name, wins, wins + loses as matches
+        FROM players
+        ORDER BY wins
+        DESC
+    """
 
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(QUERY)
     player_standings = cursor.fetchall()
     connection.close()
+    # print("\n\nplayer_standings is %s\n\n" % player_standings)
     return player_standings
-
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
@@ -91,7 +129,15 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
+    ADD_MATCH_QUERY = "INSERT INTO matches (winner, loser) VALUES (%s, %s);"
 
+    connection = connect()
+    cursor = connection.cursor()
+
+    cursor.execute(ADD_MATCH_QUERY, (winner,loser,))
+
+    connection.commit()
+    connection.close()
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -108,3 +154,22 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    # Each player is paired with another
+    # player with an equal or nearly-equal win record, that is, a player adjacent
+    # to him or her in the standings.
+
+    # or use subselects or left joins
+    SWISS_QUERY = """
+        SELECT a.id, a.name, a.wins, b.id, b.name, b.wins
+        FROM players AS a, players AS b
+        WHERE a.wins = b.wins
+            AND a.id < b.id
+    """
+
+    connection = connect()
+    cursor = connection.cursor()
+    cursor.execute(SWISS_QUERY)
+    next_pairs = cursor.fetchall()
+    print(next_pairs)
+    connection.close()
+    return next_pairs
