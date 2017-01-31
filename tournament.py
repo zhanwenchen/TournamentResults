@@ -64,35 +64,6 @@ def registerPlayer(name):
     connection.commit()
     connection.close()
 
-# def updateScores():
-#     UPDATE_SCORES_QUERY = """
-#         UPDATE players
-#             SET wins =
-#                 (SELECT count(*)
-#                     FROM matches
-#                     WHERE winner = %s
-#                     LIMIT 1
-#                 )
-#             WHERE id = %s;
-#
-#         UPDATE players
-#             SET loses =
-#                 (SELECT count(*)
-#                     FROM matches
-#                     WHERE loser = %s
-#                     LIMIT 1
-#                 )
-#             WHERE id = %s;
-#     """
-#     connection = connect()
-#     cursor = connection.cursor()
-#
-#     cursor.execute(UPDATE_WINNER_QUERY, (winner, winner,))
-#     cursor.execute(UPDATE_LOSER_QUERY, (loser, loser,))
-#
-#     connection.commit()
-#     connection.close()
-
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -159,17 +130,78 @@ def swissPairings():
     # to him or her in the standings.
 
     # or use subselects or left joins
+    # SWISS_QUERY = """
+    #     SELECT DISTINCT ON (a) (b)
+    #         a.id, a.name, a.wins, b.id, b.name, b.wins
+    #     FROM players AS a, players AS b
+    #     WHERE a.wins = b.wins
+    #         AND a.id < b.id;
+    # """
+    #
+    # SWISS_QUERY = """
+    # SELECT
+    #     a.id as a_id,
+    #     a.name as a_name,
+    #     a.wins as a_wins
+    # FROM
+    #     players as a, players as b
+    # UNION
+    # SELECT
+    #     id as b_id,
+    #     name as b_name,
+    #     wins as b_wins
+    # FROM
+    #     players;
+    # """
+    #
+    # SWISS_QUERY = """
+    # SELECT   MIN(a.id), b.id
+    # FROM     players a JOIN players b ON a.wins = b.wins AND a.id > b.id
+    # GROUP BY b.id
+    # """
+    #
+    # SWISS_QUERY = """
+    # SELECT DISTINCT a_id, a_name, b_id, b_name
+    # FROM
+    #     (SELECT DISTINCT ON (a) a.id, a.name, b.id, b.name
+    #     FROM
+    #         (SELECT DISTINCT id, name, wins From players) AS a
+    #     LEFT OUTER JOIN
+    #         (SELECT DISTINCT id, name, wins From players) AS b
+    #     ON a.id < b.id AND a.wins = b.wins
+    #
+    #     ) AS T3(a_id, a_name, b_id, b_name)
+    # WHERE T3 IS NOT NULL;
+    # """
     SWISS_QUERY = """
-        SELECT a.id, a.name, a.wins, b.id, b.name, b.wins
+        SELECT
+            a.id, a.name, b.id, b.name
         FROM players AS a, players AS b
         WHERE a.wins = b.wins
-            AND a.id < b.id
+            AND a.id < b.id;
     """
 
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(SWISS_QUERY)
-    next_pairs = cursor.fetchall()
-    print(next_pairs)
+    players = cursor.fetchall()
+    # print(players)
+
+    next_pairs = []
+    picked_players = []
+
+    for [a_id, a_name, b_id, b_name] in players:
+        # if a or b is already picked, skip
+        if a_id in picked_players:
+            continue
+        if b_id in picked_players:
+            continue
+
+        # otherwise put them in picked_players
+        picked_players.extend((a_id, b_id))
+        next_pairs.append([a_id, a_name, b_id, b_name])
+        # print(next_pairs)
+
+
     connection.close()
     return next_pairs
