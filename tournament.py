@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+# tournament.py
+#
+#
+# Functions definitions
+# !/usr/bin/env python
 #
 # tournament.py -- implementation of a Swiss-system tournament
 #
