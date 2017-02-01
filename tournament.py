@@ -34,12 +34,12 @@ def deleteMatches():
 
 # Remove all the player records from the database.
 def deletePlayers():
-    DELETE_PLAYERS_QUERY = "DELETE FROM players"
+    DELETE_PLAYERS_QUERY = "DELETE FROM player_names"
     queryWrapper(DELETE_PLAYERS_QUERY)
 
 # Returns the number of players currently registered.
 def countPlayers():
-    COUNT_PLAYERS_QUERY = "SELECT count(*) FROM players;"
+    COUNT_PLAYERS_QUERY = "SELECT count(*) FROM player_names;"
 
     connection, cursor = connect()
     cursor.execute(COUNT_PLAYERS_QUERY)
@@ -59,7 +59,7 @@ def countPlayers():
 # """
 def registerPlayer(name):
 
-    REGISTER_PLAYERS_QUERY = """INSERT INTO players (name) VALUES (%s);"""
+    REGISTER_PLAYERS_QUERY = """INSERT INTO player_names (name) VALUES (%s);"""
     REGISTER_PLAYERS_PARAMS = (name,) # singleton tuple to prevent SQL injections
 
     queryWrapper(REGISTER_PLAYERS_QUERY, REGISTER_PLAYERS_PARAMS)
@@ -78,8 +78,16 @@ def playerStandings():
         matches: the number of matches the player has played
     """
     QUERY = """
-        SELECT id, name, wins, wins + loses as matches
-        FROM players
+        SELECT
+            player_names.id,
+            player_names.name,
+            player_scores.wins,
+            player_scores.wins + player_scores.loses as matches
+        FROM
+            player_names,
+            player_scores
+        WHERE
+            player_names.id = player_scores.id
         ORDER BY wins DESC
     """
 
@@ -87,6 +95,7 @@ def playerStandings():
     cursor.execute(QUERY)
     player_standings = cursor.fetchall()
     connection.close()
+    # print(player_standings)
     return player_standings
 
 def reportMatch(winner, loser):
@@ -120,10 +129,17 @@ def swissPairings():
     ## Use SQL JOIN to get unique combinations
     SWISS_QUERY = """
         SELECT
-            a.id, a.name, b.id, b.name
-        FROM players AS a, players AS b
-        WHERE a.wins = b.wins
-            AND a.id < b.id;
+            a.id, c.name, b.id, c.name
+        FROM
+            player_scores AS a,
+            player_scores AS b,
+            player_names AS c,
+            player_names AS d
+        WHERE
+            a.wins = b.wins
+            AND a.id < b.id
+            AND a.id = c.id
+            AND b.id = d.id
     """
 
     connection, cursor = connect()
