@@ -10,10 +10,7 @@
 import psycopg2
 
 
-# Connect to the PostgreSQL database.  Returns a database connection.
-def connectOld():
-    return psycopg2.connect("dbname=tournament")
-
+# Connect to the PostgreSQL database.
 def connect(database_name="tournament"):
     try:
         connection = psycopg2.connect("dbname={}".format(database_name))
@@ -22,24 +19,23 @@ def connect(database_name="tournament"):
     except:
         print("Connection error in connect()")
 
+# wrapper for queries not requiring a cursor returned
+def queryWrapper(query, param=None):
+    connection, cursor = connect()
+
+    cursor.execute(query, param)
+    connection.commit()
+    connection.close()
 
 # Remove all the match records from the database.
 def deleteMatches():
     DELETE_MATCHES_QUERY = "DELETE FROM matches"
-
-    connection, cursor = connect()
-    cursor.execute(DELETE_MATCHES_QUERY)
-    connection.commit()
-    connection.close()
+    queryWrapper(DELETE_MATCHES_QUERY)
 
 # Remove all the player records from the database.
 def deletePlayers():
     DELETE_PLAYERS_QUERY = "DELETE FROM players"
-
-    connection, cursor = connect()
-    cursor.execute(DELETE_PLAYERS_QUERY)
-    connection.commit()
-    connection.close()
+    queryWrapper(DELETE_PLAYERS_QUERY)
 
 # Returns the number of players currently registered.
 def countPlayers():
@@ -66,10 +62,7 @@ def registerPlayer(name):
     REGISTER_PLAYERS_QUERY = """INSERT INTO players (name) VALUES (%s);"""
     REGISTER_PLAYERS_PARAMS = (name,) # singleton tuple to prevent SQL injections
 
-    connection, cursor = connect()
-    cursor.execute(REGISTER_PLAYERS_QUERY, REGISTER_PLAYERS_PARAMS)
-    connection.commit()
-    connection.close()
+    queryWrapper(REGISTER_PLAYERS_QUERY, REGISTER_PLAYERS_PARAMS)
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -94,7 +87,6 @@ def playerStandings():
     cursor.execute(QUERY)
     player_standings = cursor.fetchall()
     connection.close()
-    # print("\n\nplayer_standings is %s\n\n" % player_standings)
     return player_standings
 
 def reportMatch(winner, loser):
@@ -107,10 +99,7 @@ def reportMatch(winner, loser):
     ADD_MATCH_QUERY = "INSERT INTO matches (winner, loser) VALUES (%s, %s);"
     ADD_MATCH_PARAMS = (winner,loser,) # Two-tuple to prevent SQL injections
 
-    connection, cursor = connect()
-    cursor.execute(ADD_MATCH_QUERY, ADD_MATCH_PARAMS)
-    connection.commit()
-    connection.close()
+    queryWrapper(ADD_MATCH_QUERY, ADD_MATCH_PARAMS)
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -142,7 +131,7 @@ def swissPairings():
     players = cursor.fetchall()
     # print(players)
 
-    ## Use Python to filter out bidirectional duplicates 
+    ## Use Python to filter out bidirectional duplicates
     next_pairs = []
     picked_players = []
 

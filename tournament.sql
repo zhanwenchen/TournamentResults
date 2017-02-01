@@ -8,12 +8,14 @@ CREATE DATABASE tournament;
 \c tournament
 
 -- 2. Create table "players"
-CREATE TABLE players (
+CREATE TABLE player_names (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   wins INT DEFAULT 0 CONSTRAINT non_negative_wins CHECK (wins >= 0),
   loses INT DEFAULT 0 CONSTRAINT non_negative_loses CHECK (loses >= 0)
 );
+
+CREATE TABLE stats ()
 
 -- 3. Create table "matches"
 CREATE TABLE matches (
